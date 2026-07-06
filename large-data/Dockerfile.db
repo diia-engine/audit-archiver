@@ -1,6 +1,0 @@
-FROM postgres:15
-
-# Встановлюємо pg_partman (і pg_cron про всяк випадок, раптом знадобиться)
-RUN apt-get update && \
-    apt-get install -y postgresql-15-partman postgresql-15-cron && \
-    rm -rf /var/lib/apt/lists/*
