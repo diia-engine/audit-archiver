@@ -1,6 +1,6 @@
 1. Переконайся, що Secrets існують:
    kubectl get secret analytical-pguser-postgres
-   kubectl get secret audit-s3-credentials
+   kubectl get secret s3-test
 
 2. Встановлення:
    helm install audit-archiver ./helm --namespace edu-dev --create-namespace

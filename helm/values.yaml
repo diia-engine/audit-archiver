@@ -40,11 +40,11 @@ db:
 # =====================================================
 s3:
   endpoint: "http://minio.diia-storage:9000"
-  region: "us-east-1"
-  bucket: "diia-audit-archive"
-  existingSecret: "audit-s3-credentials"
-  accessKey: "access-key"
-  secretKey: "secret-key"
+  region: "eu-central-1"
+  bucket: "s3-aikom-test"
+  existingSecret: "s3-test"
+  accessKey: "AccessKey"
+  secretKey: "SecretAccessKey"
 
 resources:
   requests:
