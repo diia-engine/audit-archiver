@@ -1,0 +1,13 @@
+1. Переконайся, що Secrets існують:
+   kubectl get secret analytical-pguser-postgres
+   kubectl get secret audit-s3-credentials
+
+2. Встановлення:
+   helm install audit-archiver ./helm --namespace edu-dev --create-namespace
+
+3. Перевірка:
+   kubectl get cronjob
+   kubectl get jobs --watch
+
+4. Monolithic режим:
+   archiveTableName: "audit_event_master"

@@ -1,0 +1,66 @@
+# =====================================================
+# Audit Archiver - Helm Values
+# =====================================================
+
+nameOverride: "audit-archiver-cronjob"
+
+image:
+  repository: harbor.diia.gov.ua/platform/audit-archiver
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+  # - name: harbor-pull-secret
+
+schedule: "0 3 * * *"
+concurrencyPolicy: Forbid
+successfulJobsHistoryLimit: 5
+failedJobsHistoryLimit: 3
+backoffLimit: 2
+ttlSecondsAfterFinished: 86400
+
+
+retentionHours: 48
+archiveTableName: ""
+
+# =====================================================
+# Database
+# =====================================================
+db:
+  name: "audit"
+  schema: "public"
+  existingSecret: "analytical-pguser-postgres"
+  hostKey: "host"
+  portKey: "port"
+  userKey: "user"
+  passwordKey: "password"
+
+# =====================================================
+# S3
+# =====================================================
+s3:
+  endpoint: "http://minio.diia-storage:9000"
+  region: "us-east-1"
+  bucket: "diia-audit-archive"
+  existingSecret: "audit-s3-credentials"
+  accessKey: "access-key"
+  secretKey: "secret-key"
+
+resources:
+  requests:
+    memory: "768Mi"
+    cpu: "500m"
+    ephemeralStorage: "2Gi"
+  limits:
+    memory: "1536Mi"
+    cpu: "1500m"
+    ephemeralStorage: "10Gi"
+
+tmpStorage:
+  sizeLimit: "8Gi"
+
+extraEnv: []
+
+serviceAccount:
+  create: false
+  name: ""

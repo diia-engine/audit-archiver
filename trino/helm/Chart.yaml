@@ -1,0 +1,6 @@
+apiVersion: v2
+name: trino
+description: Trino for querying Parquet data in S3/MinIO (audit use case)
+type: application
+version: 0.1.0
+appVersion: "435"
