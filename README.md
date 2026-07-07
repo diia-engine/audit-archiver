@@ -9,33 +9,34 @@ Groovy сервіс для архівування "холодних" даних 
 - **pg_partman** — Використовується тільки для початкового створення partitioned таблиці (одноразово)
 
 ## Структура проєкту
+
 components/
 └── audit-archiver/
-├── app/                          # Вихідний код Groovy
-├── Dockerfile                    # Multi-stage збірка
-├── .dockerignore
-├── helm/                         # Helm chart для audit-archiver
-│   ├── Chart.yaml
-│   ├── values.yaml
-│   ├── NOTES.txt
-│   └── templates/
-│       ├── cronjob.yaml
-│       └── _helpers.tpl
-├── trino/                        # Trino як окремий компонент
-│   └── helm/
-│       ├── Chart.yaml
-│       ├── values.yaml
-│       ├── NOTES.txt
-│       └── templates/
-│           ├── deployment.yaml
-│           ├── service.yaml
-│           ├── configmap-catalog.yaml
-│           ├── configmap-init.yaml
-│           ├── job-init.yaml
-│           └── _helpers.tpl
-├── local-env/                    # Локальне development оточення
-└── README.md
-text
+    ├── app/
+    ├── Dockerfile
+    ├── .dockerignore
+    ├── helm/
+    │   ├── Chart.yaml
+    │   ├── values.yaml
+    │   ├── NOTES.txt
+    │   └── templates/
+    │       ├── cronjob.yaml
+    │       └── _helpers.tpl
+    ├── trino/
+    │   └── helm/
+    │       ├── Chart.yaml
+    │       ├── values.yaml
+    │       ├── NOTES.txt
+    │       └── templates/
+    │           ├── deployment.yaml
+    │           ├── service.yaml
+    │           ├── configmap-catalog.yaml
+    │           ├── configmap-init.yaml
+    │           ├── job-init.yaml
+    │           └── _helpers.tpl
+    ├── local-env/
+    └── README.md
+
 ## Збірка Docker-образу
 
 ```
@@ -45,7 +46,7 @@ docker push your-registry/audit-archiver:1.0.0
 Деплой
 1. Створення секретів
 
-### Секрет для PostgreSQL
+ Секрет для PostgreSQL
 ```
 kubectl create secret generic postgres-secret \
   --from-literal=host=your-postgres-host \
@@ -54,7 +55,7 @@ kubectl create secret generic postgres-secret \
   --from-literal=password=your-password \
   -n edu-dev
 ```
-### Секрет для S3
+ Секрет для S3
 ```
 kubectl create secret generic s3-test \
   --from-literal=AccessKey=your-access-key \
@@ -74,4 +75,5 @@ helm install trino-audit-release ./trino/helm \
   --create-namespace
 ```
 Локальний запуск
+
 Дивіться папку local-env/.
