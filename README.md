@@ -8,35 +8,6 @@ Groovy сервіс для архівування "холодних" даних 
 - **Trino** — Query Engine для читання Parquet файлів з S3 (тільки для аудиту)
 - **pg_partman** — Використовується тільки для початкового створення partitioned таблиці (одноразово)
 
-## Структура проєкту
-
-components/
-└── audit-archiver/
-    ├── app/
-    ├── Dockerfile
-    ├── .dockerignore
-    ├── helm/
-    │   ├── Chart.yaml
-    │   ├── values.yaml
-    │   ├── NOTES.txt
-    │   └── templates/
-    │       ├── cronjob.yaml
-    │       └── _helpers.tpl
-    ├── trino/
-    │   └── helm/
-    │       ├── Chart.yaml
-    │       ├── values.yaml
-    │       ├── NOTES.txt
-    │       └── templates/
-    │           ├── deployment.yaml
-    │           ├── service.yaml
-    │           ├── configmap-catalog.yaml
-    │           ├── configmap-init.yaml
-    │           ├── job-init.yaml
-    │           └── _helpers.tpl
-    ├── local-env/
-    └── README.md
-
 ## Збірка Docker-образу
 
 ```
