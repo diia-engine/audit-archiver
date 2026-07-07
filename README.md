@@ -35,38 +35,38 @@ components/
 │           └── _helpers.tpl
 ├── local-env/                    # Локальне development оточення
 └── README.md
-text## Збірка Docker-образу
+text
+## Збірка Docker-образу
 
-```bash
+```
 docker build -t your-registry/audit-archiver:1.0.0 -f Dockerfile .
 docker push your-registry/audit-archiver:1.0.0
+```
 Деплой
 1. Створення секретів
 Bash# Секрет для PostgreSQL
-kubectl create secret generic postgres-secret \
+```kubectl create secret generic postgres-secret \
   --from-literal=host=your-postgres-host \
   --from-literal=port=5432 \
   --from-literal=user=your-user \
   --from-literal=password=your-password \
   -n edu-dev
-
+```
 # Секрет для S3
-kubectl create secret generic s3-test \
+```kubectl create secret generic s3-test \
   --from-literal=AccessKey=your-access-key \
   --from-literal=SecretAccessKey=your-secret-key \
   -n edu-dev
+```
 2. Деплой audit-archiver
-Bashhelm install audit-archiver ./helm \
+```helm install audit-archiver ./helm \
   --namespace edu-dev \
   --create-namespace
+```
 3. Деплой Trino
-Bashhelm install trino-audit-release ./trino/helm \
+```helm install trino-audit-release ./trino/helm \
   --namespace edu-dev \
   --create-namespace
+```
 Локальний запуск
 Дивіться папку local-env/.
-Примітки
-
-pg_partman потрібен тільки один раз для створення partitioned таблиці.
-Init Job у Trino створює схему minio.audit і таблицю events (одноразово).
-Для production рекомендується використовувати External Secrets Operator для керування секретами.
