@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "trino.fullname" . }}-catalog
+  labels:
+    {{- include "trino.labels" . | nindent 4 }}
+data:
+  minio.properties: |
+    connector.name=hive
+    hive.metastore=file
+    hive.metastore.catalog.dir=/tmp/trino-metastore
+    hive.recursive-directories=true
+    fs.native-s3.enabled=true
+    s3.endpoint={{ .Values.s3.endpoint }}
+    s3.aws-access-key={{ .Values.s3.accessKey }}
+    s3.aws-secret-key={{ .Values.s3.secretKey }}
+    s3.path-style-access={{ .Values.s3.pathStyleAccess }}
+    s3.region={{ .Values.s3.region }}

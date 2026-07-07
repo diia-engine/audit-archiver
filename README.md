@@ -1,1 +1,72 @@
-# audit-archiver
+# Audit Archiver
+
+Groovy сервіс для архівування "холодних" даних аудиту з PostgreSQL у форматі Parquet у S3 з подальшим видаленням партицій.
+
+## Архітектура
+
+- **audit-archiver** — CronJob, який експортує дані з БД у Parquet → S3
+- **Trino** — Query Engine для читання Parquet файлів з S3 (тільки для аудиту)
+- **pg_partman** — Використовується тільки для початкового створення partitioned таблиці (одноразово)
+
+## Структура проєкту
+components/
+└── audit-archiver/
+├── app/                          # Вихідний код Groovy
+├── Dockerfile                    # Multi-stage збірка
+├── .dockerignore
+├── helm/                         # Helm chart для audit-archiver
+│   ├── Chart.yaml
+│   ├── values.yaml
+│   ├── NOTES.txt
+│   └── templates/
+│       ├── cronjob.yaml
+│       └── _helpers.tpl
+├── trino/                        # Trino як окремий компонент
+│   └── helm/
+│       ├── Chart.yaml
+│       ├── values.yaml
+│       ├── NOTES.txt
+│       └── templates/
+│           ├── deployment.yaml
+│           ├── service.yaml
+│           ├── configmap-catalog.yaml
+│           ├── configmap-init.yaml
+│           ├── job-init.yaml
+│           └── _helpers.tpl
+├── local-env/                    # Локальне development оточення
+└── README.md
+text## Збірка Docker-образу
+
+```bash
+docker build -t your-registry/audit-archiver:1.0.0 -f Dockerfile .
+docker push your-registry/audit-archiver:1.0.0
+Деплой
+1. Створення секретів
+Bash# Секрет для PostgreSQL
+kubectl create secret generic postgres-secret \
+  --from-literal=host=your-postgres-host \
+  --from-literal=port=5432 \
+  --from-literal=user=your-user \
+  --from-literal=password=your-password \
+  -n edu-dev
+
+# Секрет для S3
+kubectl create secret generic s3-test \
+  --from-literal=AccessKey=your-access-key \
+  --from-literal=SecretAccessKey=your-secret-key \
+  -n edu-dev
+2. Деплой audit-archiver
+Bashhelm install audit-archiver ./helm \
+  --namespace edu-dev \
+  --create-namespace
+3. Деплой Trino
+Bashhelm install trino-audit-release ./trino/helm \
+  --namespace edu-dev \
+  --create-namespace
+Локальний запуск
+Дивіться папку local-env/.
+Примітки
+
+pg_partman потрібен тільки один раз для створення partitioned таблиці.
+Init Job у Trino створює схему minio.audit і таблицю events (одноразово).
+Для production рекомендується використовувати External Secrets Operator для керування секретами.

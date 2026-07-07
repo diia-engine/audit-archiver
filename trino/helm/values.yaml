@@ -1,0 +1,47 @@
+# =====================================================
+# Trino Helm Values (для audit)
+# =====================================================
+
+image:
+  repository: trinodb/trino
+  tag: "435"
+  pullPolicy: IfNotPresent
+
+nameOverride: "trino-audit"
+
+# =====================================================
+# Init Job (створення схеми і таблиці)
+# =====================================================
+init:
+  enabled: true
+  backoffLimit: 10
+  ttlSecondsAfterFinished: 3600   # видаляти Job через 1 годину після завершення
+
+# =====================================================
+# S3 / MinIO налаштування (для S3 catalog)
+# =====================================================
+s3:
+  endpoint: "http://minio.diia-storage:9000"
+  region: "eu-central-1"
+  pathStyleAccess: true
+
+  existingSecret: "s3-test"
+  accessKey: "AccessKey"
+  secretKey: "SecretAccessKey"
+
+# =====================================================
+# Ресурси Trino
+# =====================================================
+resources:
+  requests:
+    memory: "2Gi"
+    cpu: "1000m"
+  limits:
+    memory: "4Gi"
+    cpu: "2000m"
+
+# =====================================================
+# Додаткові налаштування
+# =====================================================
+extraEnv: []
+extraConfig: {}

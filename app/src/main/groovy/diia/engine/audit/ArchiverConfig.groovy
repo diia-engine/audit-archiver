@@ -32,7 +32,7 @@ class ArchiverConfig {
         }
         s3KeyId = System.getenv().getOrDefault("S3_ACCESS_KEY", "minio_admin")
         s3Secret = System.getenv().getOrDefault("S3_SECRET_KEY", "minio_password")
-        s3Bucket = System.getenv().getOrDefault("S3_BUCKET", "diia-audit-archive")
+        s3Bucket = System.getenv().getOrDefault("S3_BUCKET", "s3-aikom-test")
 
         retentionHours = parseRetentionHours(System.getenv().getOrDefault("RETENTION_HOURS", "24"))
 

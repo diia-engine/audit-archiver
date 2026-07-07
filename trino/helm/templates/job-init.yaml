@@ -1,0 +1,39 @@
+{{- if .Values.init.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "trino.fullname" . }}-init
+  labels:
+    {{- include "trino.labels" . | nindent 4 }}
+spec:
+  backoffLimit: {{ .Values.init.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.init.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Chart.Name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: trino-init
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for Trino to be ready..."
+              until trino --server http://{{ include "trino.fullname" . }}:8080 --execute 'SELECT 1' > /dev/null 2>&1; do
+                sleep 5
+              done
+              echo "Trino is ready. Applying init SQL..."
+              trino --server http://{{ include "trino.fullname" . }}:8080 -f /init/init-trino.sql
+              echo "Init completed successfully."
+          volumeMounts:
+            - name: init-sql
+              mountPath: /init
+      volumes:
+        - name: init-sql
+          configMap:
+            name: {{ include "trino.fullname" . }}-init
+{{- end }}
