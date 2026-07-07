@@ -44,27 +44,32 @@ docker push your-registry/audit-archiver:1.0.0
 ```
 Деплой
 1. Створення секретів
-Bash# Секрет для PostgreSQL
-```kubectl create secret generic postgres-secret \
+
+### Секрет для PostgreSQL
+```
+kubectl create secret generic postgres-secret \
   --from-literal=host=your-postgres-host \
   --from-literal=port=5432 \
   --from-literal=user=your-user \
   --from-literal=password=your-password \
   -n edu-dev
 ```
-# Секрет для S3
-```kubectl create secret generic s3-test \
+### Секрет для S3
+```
+kubectl create secret generic s3-test \
   --from-literal=AccessKey=your-access-key \
   --from-literal=SecretAccessKey=your-secret-key \
   -n edu-dev
 ```
 2. Деплой audit-archiver
-```helm install audit-archiver ./helm \
+```
+helm install audit-archiver ./helm \
   --namespace edu-dev \
   --create-namespace
 ```
 3. Деплой Trino
-```helm install trino-audit-release ./trino/helm \
+```
+helm install trino-audit-release ./trino/helm \
   --namespace edu-dev \
   --create-namespace
 ```
