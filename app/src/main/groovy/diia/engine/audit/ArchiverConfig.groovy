@@ -26,7 +26,7 @@ class ArchiverConfig {
         dbUser = System.getenv().getOrDefault("DB_USER", "postgres")
         dbPass = System.getenv().getOrDefault("DB_PASSWORD", "postgres_password")
 
-        s3Endpoint = System.getenv().getOrDefault("S3_ENDPOINT", "http://localhost:9000")
+        s3Endpoint = System.getenv().getOrDefault("S3_ENDPOINT", "http://s3.krrt-ncr.loc:9000")
         if (!s3Endpoint.startsWith("http://") && !s3Endpoint.startsWith("https://")) {
             s3Endpoint = "http://" + s3Endpoint
         }
