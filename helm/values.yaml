@@ -50,11 +50,11 @@ resources:
   requests:
     memory: "768Mi"
     cpu: "500m"
-    ephemeralStorage: "2Gi"
+    ephemeral-storage: "2Gi"
   limits:
     memory: "1536Mi"
     cpu: "1500m"
-    ephemeralStorage: "10Gi"
+    ephemeral-storage: "10Gi"
 
 tmpStorage:
   sizeLimit: "8Gi"

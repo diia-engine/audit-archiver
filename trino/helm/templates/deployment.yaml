@@ -33,7 +33,12 @@ spec:
           volumeMounts:
             - name: catalog
               mountPath: /etc/trino/catalog
+            - name: trino-data
+              mountPath: /data/trino
       volumes:
         - name: catalog
           configMap:
             name: {{ include "trino.fullname" . }}-catalog
+        - name: trino-data
+          emptyDir: {}
+
