@@ -43,7 +43,7 @@ SELECT partman.create_parent(
     p_parent_table := 'public.audit_event_master',
     p_control := 'timestamp',
     p_interval := '1 day',
-    p_start_partition := '2026-06-10 00:00:00'::text, -- Починаємо 10 днів тому
+    p_start_partition := '2026-06-04 00:00:00'::text, -- Початок
     p_premake := 4
 );
 

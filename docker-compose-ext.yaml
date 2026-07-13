@@ -1,4 +1,5 @@
 version: '3.8'
+name: audit-archiver
 
 services:
   # 1. База даних із pg_partman
@@ -14,7 +15,12 @@ services:
       - "5454:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./large-data/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql # Сюди покладемо DDL
+      - ./large-data/init-db.sql:/docker-entrypoint-initdb.d/00-init-db.sql # Сюди покладемо DDL
+      - ./large-data/create-audit-event-archive.sql:/docker-entrypoint-initdb.d/10-create-audit-event-archive.sql
+      - ./large-data/audit_event_master.tsv:/tmp/data/audit_event_master.tsv
+      - ./large-data/audit_event_archive.tsv:/tmp/data/audit_event_archive.tsv
+      - ./large-data/import-data.sql:/docker-entrypoint-initdb.d/20-import-data.sql
+      - ./large-data/drop-latest-partition.sql:/docker-entrypoint-initdb.d/30-drop-latest-partition.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d audit"]
       interval: 5s
@@ -33,6 +39,23 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - miniodata:/data
+
+  minio-init:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Waiting for MinIO to start...';
+      until (/usr/bin/mc alias set myminio http://minio:9000 minio_admin minio_password); do 
+        echo 'MinIO is unavailable, sleeping...';
+        sleep 2; 
+      done;
+      echo 'MinIO is up! Creating bucket...';
+      /usr/bin/mc mb myminio/diia-audit-archive || true;
+      echo 'Setup complete.';
+      exit 0;
+      "
 
   # --- TRINO (Головний сервер) ---
   trino:
