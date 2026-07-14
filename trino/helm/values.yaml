@@ -1,48 +1,54 @@
-# =====================================================
-# Trino Helm Values (для audit)
-# =====================================================
-
+# ==========================================
+# Загальні налаштування образу Trino
+# ==========================================
 image:
   repository: trinodb/trino
   tag: "435"
   pullPolicy: IfNotPresent
 
-nameOverride: "trino-audit"
-
-# =====================================================
-# Init Job (створення схеми і таблиці)
-# =====================================================
+# ==========================================
+# Конфігурація ініціалізації
+# ==========================================
 init:
-  enabled: true
-  backoffLimit: 10
-  ttlSecondsAfterFinished: 3600   # видаляти Job через 1 годину після завершення
+  enabled: false
 
-# =====================================================
-# S3 / MinIO налаштування (для S3 catalog)
-# =====================================================
-s3:
-  endpoint: "http://s3.krrt-ncr.loc:9000"
-  region: "eu-central-1"
-  pathStyleAccess: true
-
-  existingSecret: "s3-test"
-  accessKey: "AccessKey"
-  secretKey: "SecretAccessKey"
-
-# =====================================================
-# Ресурси Trino
-# =====================================================
+# ==========================================
+# Налаштування ресурсів (Оптимізовано для плагінів)
+# ==========================================
 resources:
   requests:
-    memory: "2Gi"
-    cpu: "1000m"
+    memory: "1.5Gi"
+    cpu: "500m"
   limits:
-    memory: "4Gi"
-    cpu: "2000m"
+    memory: "3Gi"
+    cpu: "2"
 
-# =====================================================
-# Додаткові налаштування
-# =====================================================
-extraEnv: []
-extraConfig:
-  http-server.http.bind-host: "0.0.0.0"
+# ==========================================
+# Політики безпеки для OpenShift (restricted SCC)
+# ==========================================
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+# ==========================================
+# Налаштування підключення до S3 / MinIO
+# ==========================================
+s3:
+  endpoint: "http://s3.krrt-ncr.loc"
+  warehouseDir: "s3a://s3-aikom-test/"
+  secretName: "s3-test"
+  accessKeyKey: "AccessKey"
+  secretKeyKey: "SecretAccessKey"
+  pathStyleAccess: true
+
+# ==========================================
+# Конфігурації JVM (Heap узгоджено з limits)
+# ==========================================
+jvm:
+  maxHeapSize: "2048M"
+  gcMethod: "-XX:+UseG1GC"

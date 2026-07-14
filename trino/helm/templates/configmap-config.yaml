@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "trino.fullname" . }}-config
+  labels:
+    {{- include "trino.labels" . | nindent 4 }}
+data:
+  config.properties: |
+    coordinator=true
+    node-scheduler.include-coordinator=true
+    http-server.http.port=8080
+    discovery.uri=http://{{ include "trino.fullname" . }}:8080
+
+  node.properties: |
+    node.environment=production
+    node.data-dir=/data/trino
+
+  jvm.config: |
+    -server
+    -Xmx2G
+    -XX:+UseG1GC
+    -XX:G1ReservePercent=15
+    -Djava.io.tmpdir=/tmp

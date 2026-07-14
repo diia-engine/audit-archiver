@@ -20,17 +20,66 @@ spec:
         - name: trino
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
           ports:
             - name: http
               containerPort: 8080
               protocol: TCP
-          env:
-            {{- with .Values.extraEnv }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /v1/info
+              port: 8080
+            initialDelaySeconds: 25
+            periodSeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    (
+                      echo "=== Starting background Trino initialization ==="
+                      
+                      for i in $(seq 1 60); do
+                        # 1. Перевіряємо, чи відповідає API взагалі
+                        if curl -s http://localhost:8080/v1/info > /tmp/trino_info.json 2>&1; then
+                          
+                          # 2. Перевіряємо, чи завершилася внутрішня ініціалізація (starting: false)
+                          if grep -q '"starting":true' /tmp/trino_info.json; then
+                            echo "Trino port is open, but server is still initializing... (attempt $i/60)"
+                          else
+                            echo "Trino server is FULLY UP and READY! Running DDL statements..."
+                            sleep 2
+                            
+                            trino --server http://localhost:8080 --user admin --execute "CREATE SCHEMA IF NOT EXISTS minio.audit;"
+                            
+                            # Створюємо таблицю локально в метасторі, обходячи баг 302 Found
+                            trino --server http://localhost:8080 --user admin --execute "CREATE TABLE IF NOT EXISTS minio.audit.events (id varchar, timestamp varchar, action varchar, user_id varchar, payload varchar) WITH (format = 'PARQUET');"
+                            
+                            echo "=== Initialization completed successfully ==="
+                            break
+                          fi
+                        else
+                          echo "Waiting for Trino port 8080 to open... (attempt $i/60)"
+                        fi
+                        sleep 5
+                      done
+                    ) > /tmp/init.log 2>&1 &
+          
           volumeMounts:
+            - name: trino-config
+              mountPath: /etc/trino/config.properties
+              subPath: config.properties
+            - name: trino-config
+              mountPath: /etc/trino/node.properties
+              subPath: node.properties
+            - name: trino-config
+              mountPath: /etc/trino/jvm.config
+              subPath: jvm.config
             - name: catalog
               mountPath: /etc/trino/catalog
             - name: trino-data
@@ -39,6 +88,10 @@ spec:
         - name: catalog
           configMap:
             name: {{ include "trino.fullname" . }}-catalog
+            defaultMode: 0555
+        - name: trino-config
+          configMap:
+            name: {{ include "trino.fullname" . }}-config
+            defaultMode: 0555
         - name: trino-data
           emptyDir: {}
-

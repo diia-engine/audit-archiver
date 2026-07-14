@@ -9,3 +9,14 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
+
+{{/*
+Генерація імені ServiceAccount
+*/}}
+{{- define "audit-archiver.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create }}
+{{- default (include "audit-archiver.fullname" .) .Values.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
