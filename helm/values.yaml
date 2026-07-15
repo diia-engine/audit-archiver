@@ -37,7 +37,7 @@ db:
 # S3
 # =====================================================
 s3:
-  endpoint: "http://s3.krrt-ncr.loc:9000"
+  endpoint: "https://s3.krrt-ncr.loc"
   region: "eu-central-1"
   bucket: "s3-aikom-test"
   existingSecret: "s3-test"

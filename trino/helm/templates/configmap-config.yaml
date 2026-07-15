@@ -17,7 +17,9 @@ data:
 
   jvm.config: |
     -server
-    -Xmx2G
-    -XX:+UseG1GC
+    -Xmx{{ .Values.jvm.maxHeapSize }}
+    {{ .Values.jvm.gcMethod }}
     -XX:G1ReservePercent=15
     -Djava.io.tmpdir=/tmp
+    -Djavax.net.ssl.trustStore=/tmp/custom-cacerts
+    -Djavax.net.ssl.trustStorePassword=changeit

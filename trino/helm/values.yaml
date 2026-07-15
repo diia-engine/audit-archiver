@@ -39,13 +39,14 @@ securityContext:
 # Налаштування підключення до S3 / MinIO
 # ==========================================
 s3:
-  endpoint: "http://s3.krrt-ncr.loc"
+  endpoint: "https://s3.krrt-ncr.loc" # Змінено http -> https
   warehouseDir: "s3a://s3-aikom-test/"
   secretName: "s3-test"
   accessKeyKey: "AccessKey"
   secretKeyKey: "SecretAccessKey"
   pathStyleAccess: true
-
+  # Назва вашого чинного ConfigMap, де зберігається сертифікат s3-lb.pem
+  caConfigMapName: "audit-archiver-s3-ca" 
 # ==========================================
 # Конфігурації JVM (Heap узгоджено з limits)
 # ==========================================
