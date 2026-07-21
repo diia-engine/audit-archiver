@@ -12,6 +12,7 @@ class DatabaseService {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseService.class)
     
     private static final DateTimeFormatter DAILY_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd")
+    private static final DateTimeFormatter UNDERSCORE_DAILY_FORMAT = DateTimeFormatter.ofPattern("yyyy_MM_dd")
     private static final DateTimeFormatter HOURLY_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmm")
 
     static void runMaintenance(Connection conn) {
@@ -38,8 +39,10 @@ class DatabaseService {
                     
                     try {
                         LocalDateTime partDate
-                        if (suffix.contains('_')) {
+                        if (suffix ==~ /\d{8}_\d{4}/) {
                             partDate = LocalDateTime.parse(suffix, HOURLY_FORMAT)
+                        } else if (suffix ==~ /\d{4}_\d{2}_\d{2}/) {
+                            partDate = LocalDate.parse(suffix, UNDERSCORE_DAILY_FORMAT).atStartOfDay()
                         } else {
                             partDate = LocalDate.parse(suffix, DAILY_FORMAT).atStartOfDay()
                         }

@@ -12,7 +12,8 @@ image:
 imagePullSecrets: []
 
 # Запуск джоби (щодня о 03:00)
-schedule: "0 3 * * *"
+schedule: "45 13 * * *"
+timeZone: "Europe/Kyiv"
 concurrencyPolicy: Forbid
 successfulJobsHistoryLimit: 5
 failedJobsHistoryLimit: 3
