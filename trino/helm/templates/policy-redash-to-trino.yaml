@@ -1,0 +1,32 @@
+{{- if and .Values.networkPolicy .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "trino.fullname" . }}-allow-redash
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "trino.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: coordinator
+      app.kubernetes.io/instance: trino-audit-release
+      app.kubernetes.io/name: trino-audit-release-trino
+  ingress:
+  # Дозвіл для redash-admin
+  - from:
+    - podSelector:
+        matchLabels:
+          app: redash-admin
+    ports:
+    - protocol: TCP
+      port: 8080
+  # Дозвіл для redash-viewer
+  - from:
+    - podSelector:
+        matchLabels:
+          app: redash-viewer
+    ports:
+    - protocol: TCP
+      port: 8080
+{{- end }}

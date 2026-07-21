@@ -53,3 +53,6 @@ s3:
 jvm:
   maxHeapSize: "2048M"
   gcMethod: "-XX:+UseG1GC"
+
+networkPolicy:
+  enabled: true
