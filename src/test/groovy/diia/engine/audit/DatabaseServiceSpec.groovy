@@ -9,6 +9,7 @@ import java.time.format.DateTimeFormatter
 class DatabaseServiceSpec extends Specification {
 
     private static final DateTimeFormatter DAILY_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd")
+    private static final DateTimeFormatter UNDERSCORE_DAILY_FORMAT = DateTimeFormatter.ofPattern("yyyy_MM_dd")
     private static final DateTimeFormatter HOURLY_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmm")
 
     def "getColdPartitions should return empty list if no tables match"() {
@@ -28,7 +29,7 @@ class DatabaseServiceSpec extends Specification {
         result.isEmpty()
     }
 
-    def "getColdPartitions should filter daily and hourly partitions correctly"() {
+    def "getColdPartitions should filter compact, underscore daily, and hourly partitions correctly"() {
         given:
         def conn = Mock(Connection)
         def stmt = Mock(PreparedStatement)
@@ -37,15 +38,17 @@ class DatabaseServiceSpec extends Specification {
         // Retention: 24h
         def now = LocalDateTime.now()
         def coldDaily = now.minusDays(2).format(DAILY_FORMAT)      // 48h ago (COLD)
+        def coldUnderscoreDaily = now.minusDays(2).format(UNDERSCORE_DAILY_FORMAT)
         def hotHourly = now.minusMinutes(30).format(HOURLY_FORMAT) // 30m ago (HOT)
         def coldHourly = now.minusHours(25).format(HOURLY_FORMAT)  // 25h ago (COLD)
         
         conn.prepareStatement(_ as String) >> stmt
         stmt.executeQuery() >> rs
         
-        rs.next() >>> [true, true, true, false]
+        rs.next() >>> [true, true, true, true, false]
         rs.getString(1) >>> [
             "audit_event_master_p${coldDaily}",
+            "audit_event_master_p${coldUnderscoreDaily}",
             "audit_event_master_p${hotHourly}",
             "audit_event_master_p${coldHourly}"
         ]
@@ -54,8 +57,9 @@ class DatabaseServiceSpec extends Specification {
         def result = DatabaseService.getColdPartitions(conn, "public", 24)
 
         then:
-        result.size() == 2
+        result.size() == 3
         result.any { it.tableName.endsWith(coldDaily) }
+        result.any { it.tableName.endsWith(coldUnderscoreDaily) }
         result.any { it.tableName.endsWith(coldHourly) }
         !result.any { it.tableName.endsWith(hotHourly) }
     }
