@@ -54,12 +54,7 @@ class ArchiverJob {
 
             for (PartitionInfo part : coldPartitions) {
                 String tableName = part.tableName
-                String dateSuffix = part.suffix
-
-                String year = dateSuffix.length() >= 4 ? dateSuffix.substring(0, 4) : "0000"
-                String month = dateSuffix.length() >= 6 ? dateSuffix.substring(4, 6) : "00"
-                String day = dateSuffix.length() >= 8 ? dateSuffix.substring(6, 8) : "00"
-                String s3KeyPath = "${year}/${month}/${day}/${tableName}.parquet"
+                String s3KeyPath = buildS3KeyPath(part)
 
                 logger.info("Starting pipeline for partition: {}", tableName)
                 boolean isExported = StorageService.exportData(
@@ -88,5 +83,15 @@ class ArchiverJob {
     private static void validateBucketExists(S3Client s3Client, String bucket) {
         HeadBucketRequest request = (HeadBucketRequest) HeadBucketRequest.builder().bucket(bucket).build()
         s3Client.headBucket(request)
+    }
+
+    /**
+     * Builds the archive path from the parsed partition date rather than its name.
+     * pg_partman supports both yyyyMMdd and yyyy_MM_dd suffix formats.
+     */
+    static String buildS3KeyPath(PartitionInfo partition) {
+        def date = partition.partitionDate.toLocalDate()
+        return String.format("%04d/%02d/%02d/%s.parquet",
+                date.year, date.monthValue, date.dayOfMonth, partition.tableName)
     }
 }
