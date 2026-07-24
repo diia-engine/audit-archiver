@@ -9,11 +9,20 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/component: coordinator
-      app.kubernetes.io/instance: trino-audit-release
-      app.kubernetes.io/name: trino-audit-release-trino
+      app.kubernetes.io/name: {{ .Chart.Name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
   ingress:
-  # Дозвіл для redash-admin
+  # 1. Дозвіл Trino звертатися до самого себе (Self-communication / Discovery)
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: {{ .Chart.Name }}
+          app.kubernetes.io/instance: {{ .Release.Name }}
+    ports:
+    - protocol: TCP
+      port: 8080
+
+  # 2. Дозвіл для redash-admin
   - from:
     - podSelector:
         matchLabels:
@@ -21,7 +30,8 @@ spec:
     ports:
     - protocol: TCP
       port: 8080
-  # Дозвіл для redash-viewer
+
+  # 3. Дозвіл для redash-viewer
   - from:
     - podSelector:
         matchLabels:

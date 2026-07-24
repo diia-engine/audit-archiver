@@ -6,13 +6,13 @@ nameOverride: "audit-archiver-cronjob"
 
 image:
   repository: docker-registry.control-plane-nexus.svc:5004/edu-dev/audit-archiver
-  tag: "0.0.2"
+  tag: "0.0.3"
   pullPolicy: Always
 
 imagePullSecrets: []
 
 # Запуск джоби (щодня о 03:00)
-schedule: "45 17 * * *"
+schedule: "45 13 * * *"
 timeZone: "Europe/Kyiv"
 concurrencyPolicy: Forbid
 successfulJobsHistoryLimit: 5

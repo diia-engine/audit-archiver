@@ -28,6 +28,6 @@ data:
         context VARCHAR,
         received TIMESTAMP(3)
     ) WITH (
-        external_location = 's3://diia-audit-archive/',
+        external_location = 's3://s3-aikom-test/',
         format = 'PARQUET'
     );

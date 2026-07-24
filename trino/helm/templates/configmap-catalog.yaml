@@ -9,6 +9,7 @@ data:
     connector.name=hive
     hive.metastore=file
     hive.metastore.catalog.dir=/data/trino/metadata
+    hive.recursive-directories=true
     
     # Конфігурація S3/MinIO інтеграції
     hive.s3.aws-access-key=${ENV:S3_ACCESS_KEY}

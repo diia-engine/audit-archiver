@@ -16,7 +16,6 @@ spec:
         app.kubernetes.io/name: {{ .Chart.Name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
-      # Ініціалізуючий контейнер для імпорту сертифіката у Truststore
       initContainers:
         - name: import-cert
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -27,7 +26,6 @@ spec:
             - -c
             - |
               echo "Preparing custom truststore..."
-              # Знаходимо де лежить оригінальний cacerts в образі Trino та копіюємо його в спільну emptyDir директорію
               ORIG_CACERTS=$(find /usr -name cacerts 2>/dev/null | head -n 1)
               if [ -z "$ORIG_CACERTS" ]; then
                 ORIG_CACERTS=$(find /etc -name cacerts 2>/dev/null | head -n 1)
@@ -35,7 +33,6 @@ spec:
               echo "Found original cacerts at: $ORIG_CACERTS"
               cp "$ORIG_CACERTS" /tmp/custom-cacerts
               
-              # Імпортуємо наш S3 SSL сертифікат
               echo "Importing s3-lb.pem into truststore..."
               keytool -importcert \
                 -alias s3-lb \
@@ -57,7 +54,8 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           env:
-            # Передаємо змінні доступу до S3 з секрету в контейнер
+            - name: HOME
+              value: "/tmp"
             - name: S3_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
@@ -91,20 +89,41 @@ spec:
                       echo "=== Starting background Trino initialization ==="
                       
                       for i in $(seq 1 60); do
-                        # 1. Перевіряємо, чи відповідає API взагалі
                         if curl -s http://localhost:8080/v1/info > /tmp/trino_info.json 2>&1; then
                           
-                          # 2. Перевіряємо, чи завершилася внутрішня ініціалізація (starting: false)
                           if grep -q '"starting":true' /tmp/trino_info.json; then
                             echo "Trino port is open, but server is still initializing... (attempt $i/60)"
                           else
                             echo "Trino server is FULLY UP and READY! Running DDL statements..."
                             sleep 2
                             
-                            trino --server http://localhost:8080 --user admin --execute "CREATE SCHEMA IF NOT EXISTS minio.audit;"
-                            
-                            # Створюємо таблицю локально в метасторі
-                            trino --server http://localhost:8080 --user admin --execute "CREATE TABLE IF NOT EXISTS minio.audit.events (id varchar, timestamp varchar, action varchar, user_id varchar, payload varchar) WITH (format = 'PARQUET');"
+                            trino --server http://localhost:8080 --user admin --execute "
+                              CREATE SCHEMA IF NOT EXISTS minio.audit WITH (location = 's3://s3-aikom-test/');
+                              
+                              CREATE TABLE IF NOT EXISTS minio.audit.events (
+                                  id VARCHAR,
+                                  request_id VARCHAR,
+                                  application_name VARCHAR,
+                                  name VARCHAR,
+                                  type VARCHAR,
+                                  \"timestamp\" TIMESTAMP(3),
+                                  user_keycloak_id VARCHAR,
+                                  user_name VARCHAR,
+                                  user_drfo VARCHAR,
+                                  source_system VARCHAR,
+                                  source_application VARCHAR,
+                                  source_business_process VARCHAR,
+                                  source_business_process_definition_id VARCHAR,
+                                  source_business_process_instance_id VARCHAR,
+                                  source_business_activity VARCHAR,
+                                  source_business_activity_id VARCHAR,
+                                  context VARCHAR,
+                                  received TIMESTAMP(3)
+                              ) WITH (
+                                  external_location = 's3://s3-aikom-test/',
+                                  format = 'PARQUET'
+                              );
+                            "
                             
                             echo "=== Initialization completed successfully ==="
                             break
@@ -130,7 +149,6 @@ spec:
               mountPath: /etc/trino/catalog
             - name: trino-data
               mountPath: /data/trino
-            # Монтуємо Truststore, згенерований в initContainers, у робочий контейнер
             - name: truststore-volume
               mountPath: /tmp
       volumes:
@@ -144,10 +162,8 @@ spec:
             defaultMode: 0555
         - name: trino-data
           emptyDir: {}
-        # Спільне сховище для truststore між init-контейнером та основним Trino
         - name: truststore-volume
           emptyDir: {}
-        # Джерело сертифіката (ConfigMap)
         - name: s3-ca-volume
           configMap:
             name: {{ .Values.s3.caConfigMapName }}
