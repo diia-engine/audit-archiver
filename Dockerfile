@@ -1,34 +1,35 @@
 # ----------------------------------------------
-# Stage 1: Build (Додано docker.io для сумісності з Podman)
+# Stage 1: Build
 # ----------------------------------------------
 FROM docker.io/library/gradle:8.14-jdk21 AS builder
 
 WORKDIR /build
 
-# Копіюємо файли конфігурації з підпапки app/
-COPY app/build.gradle app/settings.gradle ./
-COPY app/gradle ./gradle
+# Копіюємо файли конфігурації Gradle з кореня проєкту
+COPY build.gradle settings.gradle ./
+COPY gradle ./gradle
 
+# Прогріваємо кеш залежностей
 RUN gradle dependencies --no-daemon || return 0
 
-# Копіюємо весь код додатка та запускаємо збірку Fat JAR
-COPY app/ ./
+# Копіюємо весь вихідний код та збираємо Fat JAR
+COPY . .
 RUN gradle clean shadowJar --no-daemon -x test
 
 # ----------------------------------------------
-# Stage 2: Runtime (Виправлено шлях копіювання JAR-файлу)
+# Stage 2: Runtime
 # ----------------------------------------------
 FROM docker.io/library/eclipse-temurin:21-jre
 
 WORKDIR /app
 
-# ВИПРАВЛЕНО: додано префікс 'app/' та зірочку, оскільки Gradle збирає файл з версією
-COPY --from=builder /build/build/libs/audit-archiver-1.0.0.jar /app/audit-archiver.jar
-
-# Залишаємо решту налаштувань рантайму без змін
+# Створюємо непривілейованого користувача
 RUN groupadd -r auditgroup && \
     useradd -r -g auditgroup -d /app -s /bin/false audituser && \
     chown -R audituser:auditgroup /app
+
+# Копіюємо згенерований Fat JAR та одразу виставляємо права
+COPY --chown=audituser:auditgroup --from=builder /build/build/libs/*-all.jar /app/audit-archiver.jar
 
 USER audituser
 
