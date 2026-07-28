@@ -1,0 +1,10 @@
+export S3_ENDPOINT=https://s3.krrt-ncr.loc
+export S3_BUCKET=s3-aikom-test
+
+Суммарний обсяг бакета:
+aws --endpoint-url "$S3_ENDPOINT" s3 ls   "s3://$S3_BUCKET/" --recursive --summarize --no-verify-ssl \
+| awk '/Total Objects:/ { objects=$3 } /Total Size:/ { printf "Objects: %s | Size: %.2f GiB\n", objects, $3 / 1024 / 1024 / 1024 }'
+
+Глянути вміст папки:
+aws --endpoint-url="$S3_ENDPOINT" --no-verify-ssl s3 ls
+aws --endpoint-url="$S3_ENDPOINT" --no-verify-ssl s3 ls "s3://$S3_BUCKET" --recursive --human-readable
