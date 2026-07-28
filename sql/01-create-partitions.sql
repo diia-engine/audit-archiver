@@ -1,3 +1,8 @@
+-- ІНІЦІАЛІЗАЦІЯ PG_PARTMAN
+-- Встановлюємо сам екстеншен
+CREATE SCHEMA IF NOT EXISTS partman;
+CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman;
+
 BEGIN;
 
 -- ==========================================
@@ -47,18 +52,14 @@ ALTER VIEW IF EXISTS public.audit_event OWNER to postgres;
 GRANT SELECT, INSERT ON public.audit_event TO audit_service_user;
 GRANT SELECT, INSERT ON public.audit_event_master TO audit_service_user;
 
--- 5. ІНІЦІАЛІЗАЦІЯ PG_PARTMAN
--- Встановлюємо сам екстеншен
-CREATE SCHEMA IF NOT EXISTS partman;
-CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman;
-
--- Налаштовуємо нарізку по ДНЯХ (бо тестувати місяці незручно)
+-- Налаштовуємо нарізку по ДНЯХ
 SELECT partman.create_parent(
                p_parent_table := 'public.audit_event_master',
                p_control := 'timestamp',
+               p_type := 'native',
                p_interval := '1 day',
-               p_premake := 4
-       );
+               p_premake := 14
+);
 
 UPDATE partman.part_config
 SET infinite_time_partitions = true
