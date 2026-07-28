@@ -184,6 +184,41 @@ kubectl get pods --namespace edu-dev -l app.kubernetes.io/name=trino
 kubectl get svc --namespace edu-dev
 ```
 
+## Optional: migrate Redash queries and dashboards
+
+After Trino and the `minio.audit.events` table are available, you can migrate the audit queries and dashboards from a Redash Admin instance to a Redash Viewer instance.
+
+### 1. Create the Viewer data source
+
+Sign in to Redash Viewer with an Officer-realm user that has the `admin` role. Open **Settings → New Data Source**, select **Trino**, and use the following settings:
+
+| Field | Value |
+| --- | --- |
+| Name | `s3-audit` |
+| Protocol | `http` |
+| Host | `trino-audit-trino` for the installation command above; otherwise, `<trino-release-name>-trino` |
+| Port | `8080` |
+| Username | `admin` |
+| Password | Leave empty |
+| Catalog | `minio` |
+| Schema | `audit` |
+
+The data-source name and type must remain `s3-audit` and `trino`: the migration scripts use these values to locate the Viewer data source.
+
+### 2. Import the supplied example artifacts
+
+To import the example queries and dashboards, execute [sql/redash-artifacts-example.sql](sql/redash-artifacts-example.sql) against the **Redash Viewer PostgreSQL database**. The script expects the target user and organization IDs to be `1`; update `v_user_id` and `v_target_org_id` in the script when the Viewer instance uses different IDs.
+
+### 3. Generate and import a custom migration
+
+To migrate artifacts from a Redash Admin instance:
+
+1. Review the `config` CTE at the top of [sql/03-redash-export.sql](sql/03-redash-export.sql). Set the target Viewer organization and user IDs, and optionally restrict the export with dashboard slugs or query names.
+2. Execute the script against the **Redash Admin PostgreSQL database**. It returns one `sql_script` value.
+3. Copy that value to a UTF-8 `.sql` file and execute it against the **Redash Viewer PostgreSQL database**.
+
+The generated script upserts queries and dashboards, replaces their widgets, and validates that the required Viewer data source and user exist. It skips mixed-data-source dashboards to avoid importing incomplete dashboards. Treat the generated SQL as sensitive operational data and review it before execution.
+
 ## Archive layout and querying
 
 For a partition named `audit_event_master_p20260728`, the standard mode uploads:
