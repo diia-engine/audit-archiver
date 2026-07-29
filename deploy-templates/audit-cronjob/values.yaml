@@ -6,7 +6,7 @@ nameOverride: "audit-archiver-cronjob"
 
 image:
   repository: docker-registry.control-plane-nexus.svc:5004/edu-dev/audit-archiver
-  tag: "0.0.3"
+  tag: "0.0.4"
   pullPolicy: Always
 
 imagePullSecrets: []
@@ -40,8 +40,8 @@ db:
 s3:
   endpoint: "https://s3.krrt-ncr.loc"
   region: "eu-central-1"
-  bucket: "s3-aikom-test"
-  existingSecret: "s3-test"
+  bucket: "s3-edu-stage-test"
+  existingSecret: "s3-audit-archiv"
   accessKey: "AccessKey"
   secretKey: "SecretAccessKey"
 

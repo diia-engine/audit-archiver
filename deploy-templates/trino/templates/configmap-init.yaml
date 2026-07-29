@@ -6,7 +6,7 @@ metadata:
     {{- include "trino.labels" . | nindent 4 }}
 data:
   init-trino.sql: |
-    CREATE SCHEMA IF NOT EXISTS minio.audit WITH (location = 's3://s3-aikom-test/');
+    CREATE SCHEMA IF NOT EXISTS minio.audit WITH (location = 's3://{{ .Values.s3.bucketName }}/');
 
     CREATE TABLE IF NOT EXISTS minio.audit.events (
         id VARCHAR,
@@ -28,6 +28,6 @@ data:
         context VARCHAR,
         received TIMESTAMP(3)
     ) WITH (
-        external_location = 's3://s3-aikom-test/',
+        external_location = 's3://{{ .Values.s3.bucketName }}/',
         format = 'PARQUET'
     );

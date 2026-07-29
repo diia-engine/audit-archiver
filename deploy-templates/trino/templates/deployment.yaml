@@ -98,7 +98,7 @@ spec:
                             sleep 2
                             
                             trino --server http://localhost:8080 --user admin --execute "
-                              CREATE SCHEMA IF NOT EXISTS minio.audit WITH (location = 's3://s3-aikom-test/');
+                              CREATE SCHEMA IF NOT EXISTS minio.audit WITH (location = 's3://{{ .Values.s3.bucketName }}/');
                               
                               CREATE TABLE IF NOT EXISTS minio.audit.events (
                                   id VARCHAR,
@@ -120,7 +120,7 @@ spec:
                                   context VARCHAR,
                                   received TIMESTAMP(3)
                               ) WITH (
-                                  external_location = 's3://s3-aikom-test/',
+                                  external_location = 's3://{{ .Values.s3.bucketName }}/',
                                   format = 'PARQUET'
                               );
                             "

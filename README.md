@@ -153,9 +153,8 @@ Both charts mount `audit-archiver-s3-ca` and import `s3-lb.pem` into a Java trus
 ### Install the archiver
 
 ```bash
-helm upgrade --install audit-archiver deploy-templates/audit-cronjob \
-  --namespace edu-dev \
-  --create-namespace
+helm install audit-archiver ./deploy-templates/audit-cronjob/   
+  --namespace edu-dev
 ```
 
 Check scheduled and completed jobs:
@@ -167,14 +166,18 @@ kubectl get jobs --namespace edu-dev --watch
 
 The default schedule in `deploy-templates/audit-cronjob/values.yaml` is `45 13 * * *`. Although the values file contains `timeZone: Europe/Kyiv`, the current CronJob template does not render `spec.timeZone`; scheduling therefore follows the Kubernetes controller's configured time zone. Add `timeZone` to the template if Kyiv time is required.
 
-To run a one-off monolithic migration, set `manualJob.enabled: true` and `manualJob.archiveTableName` in the archiver chart values, then install or upgrade the release. The generated Job is named `audit-archiver-cronjob-manual`.
+To run a one-off monolithic migration, set `manualJob.enabled: true` and `manualJob.archiveTableName` in the archiver chart values, then install or upgrade the release. The generated Job is named `audit-archiver-cronjob-manual`. Or run the following command.
+
+```bash
+helm template audit-archiver-manual ./deploy-templates/audit-cronjob/ --namespace edu-dev --show-only templates/job-manual.yaml --set manual Job.enabled=true | oc create -f -
+```
 
 ### Install Trino
 
 ```bash
-helm upgrade --install trino-audit deploy-templates/trino \
+helm install trino-audit-release ./deploy-templates/trino \
   --namespace edu-dev \
-  --create-namespace
+  --values ./deploy-templates/trino/values.yaml
 ```
 
 The chart exposes a Hive catalog named `minio`. Its built-in initialization creates `minio.audit.events`, which reads Parquet files from the configured archive bucket. Set `init.enabled: true` to create the dedicated initialization Job. The Deployment also contains a post-start initialization routine; verify the resulting table after installation:

@@ -23,13 +23,12 @@ FROM docker.io/library/eclipse-temurin:21-jre
 
 WORKDIR /app
 
-# Створюємо непривілейованого користувача
 RUN groupadd -r auditgroup && \
     useradd -r -g auditgroup -d /app -s /bin/false audituser && \
     chown -R audituser:auditgroup /app
 
-# Копіюємо згенерований Fat JAR та одразу виставляємо права
-COPY --chown=audituser:auditgroup --from=builder /build/build/libs/*-all.jar /app/audit-archiver.jar
+# ЗМІНЕНО: використовуємо загальнішу маску *.jar
+COPY --chown=audituser:auditgroup --from=builder /build/build/libs/*.jar /app/audit-archiver.jar
 
 USER audituser
 
