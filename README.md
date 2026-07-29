@@ -166,7 +166,7 @@ kubectl get jobs --namespace edu-dev --watch
 
 The default schedule in `deploy-templates/audit-cronjob/values.yaml` is `45 13 * * *`. Although the values file contains `timeZone: Europe/Kyiv`, the current CronJob template does not render `spec.timeZone`; scheduling therefore follows the Kubernetes controller's configured time zone. Add `timeZone` to the template if Kyiv time is required.
 
-To run a one-off monolithic migration, set `manualJob.enabled: true` and `manualJob.archiveTableName` in the archiver chart values, then install or upgrade the release. The generated Job is named `audit-archiver-cronjob-manual`. Or run the following command.
+To run a one-off monolithic migration, set `manualJob.enabled: true` and `manualJob.archiveTableName` and then run the following command. The generated Job is named `audit-archiver-cronjob-manual`.
 
 ```bash
 helm template audit-archiver-manual ./deploy-templates/audit-cronjob/ --namespace edu-dev --show-only templates/job-manual.yaml --set manual Job.enabled=true | oc create -f -
