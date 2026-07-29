@@ -1,0 +1,134 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Values.nameOverride | default (include "audit-archiver.fullname" .) }}
+  labels:
+    {{- include "audit-archiver.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  concurrencyPolicy: {{ .Values.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.backoffLimit }}
+      ttlSecondsAfterFinished: {{ .Values.ttlSecondsAfterFinished }}
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ .Chart.Name }}
+            app.kubernetes.io/instance: {{ .Release.Name }}
+        spec:
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.serviceAccount.create }}
+          serviceAccountName: {{ include "audit-archiver.serviceAccountName" . }}
+          {{- end }}
+          restartPolicy: OnFailure
+
+          initContainers:
+            - name: init-truststore
+              image: eclipse-temurin:11-jre-alpine
+              command:
+                - sh
+                - -c
+                - |
+                  echo "Копіюємо стандартний cacerts у тимчасову робочу папку..."
+                  cp /usr/local/openjdk-11/lib/security/cacerts /tmp/custom-cacerts || \
+                  cp /usr/lib/jvm/default-jvm/jre/lib/security/cacerts /tmp/custom-cacerts || \
+                  cp /etc/ssl/certs/java/cacerts /tmp/custom-cacerts
+                  
+                  chmod 644 /tmp/custom-cacerts
+                  
+                  echo "Імпортуємо сертифікат s3-lb.pem з ConfigMap..."
+                  keytool -importcert -noprompt \
+                    -alias s3-lb-cert \
+                    -file /certs/s3-lb.pem \
+                    -keystore /tmp/custom-cacerts \
+                    -storepass changeit
+              volumeMounts:
+                - name: ca-cert-volume
+                  mountPath: /certs
+                - name: truststore-volume
+                  mountPath: /tmp
+
+          containers:
+            - name: {{ .Chart.Name }}
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              env:
+                # === Java Truststore Configuration ===
+                - name: JAVA_TOOL_OPTIONS
+                  value: "-Djavax.net.ssl.trustStore=/tmp/custom-cacerts -Djavax.net.ssl.trustStorePassword=changeit"
+
+                # === Database ===
+                - name: DB_HOST
+                  value: {{ .Values.db.host | quote }}
+                - name: DB_PORT
+                  value: {{ .Values.db.port | quote }}
+                - name: DB_NAME
+                  value: {{ .Values.db.name | quote }}
+                - name: DB_SCHEMA
+                  value: {{ .Values.db.schema | quote }}
+                - name: DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.db.existingSecret }}
+                      key: {{ .Values.db.userKey }}
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.db.existingSecret }}
+                      key: {{ .Values.db.passwordKey }}
+
+                # === S3 ===
+                - name: S3_ENDPOINT
+                  value: {{ .Values.s3.endpoint | quote }}
+                - name: S3_REGION
+                  value: {{ .Values.s3.region | quote }}
+                - name: S3_BUCKET
+                  value: {{ .Values.s3.bucket | quote }}
+                - name: S3_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.s3.existingSecret }}
+                      key: {{ .Values.s3.accessKey }}
+                - name: S3_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.s3.existingSecret }}
+                      key: {{ .Values.s3.secretKey }}
+
+                # === Режим роботи ===
+                - name: RETENTION_HOURS
+                  value: {{ .Values.retentionHours | quote }}
+                {{- if .Values.archiveTableName }}
+                - name: ARCHIVE_TABLE_NAME
+                  value: {{ .Values.archiveTableName | quote }}
+                {{- end }}
+
+                {{- with .Values.extraEnv }}
+                {{- toYaml . | nindent 16 }}
+                {{- end }}
+
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+
+              volumeMounts:
+                - name: tmp-parquet
+                  mountPath: /tmp
+                - name: truststore-volume
+                  mountPath: /tmp/custom-cacerts
+                  subPath: custom-cacerts
+
+          volumes:
+            - name: tmp-parquet
+              emptyDir:
+                sizeLimit: {{ .Values.tmpStorage.sizeLimit }}
+            - name: truststore-volume
+              emptyDir: {}
+            - name: ca-cert-volume
+              configMap:
+                name: audit-archiver-s3-ca

@@ -1,1 +1,0 @@
-docker compose -f docker-compose-ext.yaml run --rm redash-server create_db

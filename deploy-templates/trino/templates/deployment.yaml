@@ -1,0 +1,169 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "trino.fullname" . }}
+  labels:
+    {{- include "trino.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Chart.Name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Chart.Name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      initContainers:
+        - name: import-cert
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Preparing custom truststore..."
+              ORIG_CACERTS=$(find /usr -name cacerts 2>/dev/null | head -n 1)
+              if [ -z "$ORIG_CACERTS" ]; then
+                ORIG_CACERTS=$(find /etc -name cacerts 2>/dev/null | head -n 1)
+              fi
+              echo "Found original cacerts at: $ORIG_CACERTS"
+              cp "$ORIG_CACERTS" /tmp/custom-cacerts
+              
+              echo "Importing s3-lb.pem into truststore..."
+              keytool -importcert \
+                -alias s3-lb \
+                -file /certs/s3-lb.pem \
+                -keystore /tmp/custom-cacerts \
+                -storepass changeit \
+                -noprompt
+              
+              echo "Truststore successfully generated!"
+          volumeMounts:
+            - name: s3-ca-volume
+              mountPath: /certs
+            - name: truststore-volume
+              mountPath: /tmp
+      containers:
+        - name: trino
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: HOME
+              value: "/tmp"
+            - name: S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.s3.secretName }}
+                  key: {{ .Values.s3.accessKeyKey }}
+            - name: S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.s3.secretName }}
+                  key: {{ .Values.s3.secretKeyKey }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /v1/info
+              port: 8080
+            initialDelaySeconds: 25
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    (
+                      echo "=== Starting background Trino initialization ==="
+                      
+                      for i in $(seq 1 60); do
+                        if curl -s http://localhost:8080/v1/info > /tmp/trino_info.json 2>&1; then
+                          
+                          if grep -q '"starting":true' /tmp/trino_info.json; then
+                            echo "Trino port is open, but server is still initializing... (attempt $i/60)"
+                          else
+                            echo "Trino server is FULLY UP and READY! Running DDL statements..."
+                            sleep 2
+                            
+                            trino --server http://localhost:8080 --user admin --execute "
+                              CREATE SCHEMA IF NOT EXISTS minio.audit WITH (location = 's3://s3-aikom-test/');
+                              
+                              CREATE TABLE IF NOT EXISTS minio.audit.events (
+                                  id VARCHAR,
+                                  request_id VARCHAR,
+                                  application_name VARCHAR,
+                                  name VARCHAR,
+                                  type VARCHAR,
+                                  \"timestamp\" TIMESTAMP(3),
+                                  user_keycloak_id VARCHAR,
+                                  user_name VARCHAR,
+                                  user_drfo VARCHAR,
+                                  source_system VARCHAR,
+                                  source_application VARCHAR,
+                                  source_business_process VARCHAR,
+                                  source_business_process_definition_id VARCHAR,
+                                  source_business_process_instance_id VARCHAR,
+                                  source_business_activity VARCHAR,
+                                  source_business_activity_id VARCHAR,
+                                  context VARCHAR,
+                                  received TIMESTAMP(3)
+                              ) WITH (
+                                  external_location = 's3://s3-aikom-test/',
+                                  format = 'PARQUET'
+                              );
+                            "
+                            
+                            echo "=== Initialization completed successfully ==="
+                            break
+                          fi
+                        else
+                          echo "Waiting for Trino port 8080 to open... (attempt $i/60)"
+                        fi
+                        sleep 5
+                      done
+                    ) > /tmp/init.log 2>&1 &
+          
+          volumeMounts:
+            - name: trino-config
+              mountPath: /etc/trino/config.properties
+              subPath: config.properties
+            - name: trino-config
+              mountPath: /etc/trino/node.properties
+              subPath: node.properties
+            - name: trino-config
+              mountPath: /etc/trino/jvm.config
+              subPath: jvm.config
+            - name: catalog
+              mountPath: /etc/trino/catalog
+            - name: trino-data
+              mountPath: /data/trino
+            - name: truststore-volume
+              mountPath: /tmp
+      volumes:
+        - name: catalog
+          configMap:
+            name: {{ include "trino.fullname" . }}-catalog
+            defaultMode: 0555
+        - name: trino-config
+          configMap:
+            name: {{ include "trino.fullname" . }}-config
+            defaultMode: 0555
+        - name: trino-data
+          emptyDir: {}
+        - name: truststore-volume
+          emptyDir: {}
+        - name: s3-ca-volume
+          configMap:
+            name: {{ .Values.s3.caConfigMapName }}

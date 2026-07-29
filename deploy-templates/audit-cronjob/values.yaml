@@ -1,0 +1,71 @@
+# =====================================================
+# Audit Archiver - Helm Values
+# =====================================================
+
+nameOverride: "audit-archiver-cronjob"
+
+image:
+  repository: docker-registry.control-plane-nexus.svc:5004/edu-dev/audit-archiver
+  tag: "0.0.3"
+  pullPolicy: Always
+
+imagePullSecrets: []
+
+# Запуск джоби (щодня о 03:00)
+schedule: "45 13 * * *"
+timeZone: "Europe/Kyiv"
+concurrencyPolicy: Forbid
+successfulJobsHistoryLimit: 5
+failedJobsHistoryLimit: 3
+backoffLimit: 2
+ttlSecondsAfterFinished: 86400
+
+retentionHours: 24
+
+# =====================================================
+# Database
+# =====================================================
+db:
+  name: "audit"
+  schema: "public"
+  host: "citus-master"
+  port: 5432
+  existingSecret: "citus-roles-secrets"
+  userKey: "anSvcName"
+  passwordKey: "anSvcPass"
+
+# =====================================================
+# S3
+# =====================================================
+s3:
+  endpoint: "https://s3.krrt-ncr.loc"
+  region: "eu-central-1"
+  bucket: "s3-aikom-test"
+  existingSecret: "s3-test"
+  accessKey: "AccessKey"
+  secretKey: "SecretAccessKey"
+
+resources:
+  requests:
+    memory: "768Mi"
+    cpu: "500m"
+    ephemeral-storage: "2Gi"
+  limits:
+    memory: "1536Mi"
+    cpu: "1500m"
+    ephemeral-storage: "10Gi"
+
+tmpStorage:
+  sizeLimit: "8Gi"
+
+extraEnv: []
+
+serviceAccount:
+  create: false
+  name: ""
+# =====================================================
+# Налаштування мануальної джоби (Запуск тільки руками)
+# =====================================================
+manualJob:
+  enabled: false
+  archiveTableName: "audit_event_archive"

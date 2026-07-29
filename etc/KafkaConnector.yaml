@@ -1,0 +1,18 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
+metadata:
+  name: audit
+spec:
+  config:
+    # Налаштування формату таблиці та запису
+    table.types: 'TABLE,VIEW'
+    insert.mode: insert
+    auto.evolve: 'false'
+
+    # Налаштування батчингу (JDBC Sink)
+    batch.size: 5000
+
+    # Тюнінг Consumer'а для агресивного накопичення
+    consumer.override.max.poll.records: 5000
+    consumer.override.fetch.min.bytes: 1048576  # Чекати на 1 Мегабайт
+    consumer.override.fetch.max.wait.ms: 3000   # Але не довше 3 секунд

@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "trino.fullname" . }}-init
+  labels:
+    {{- include "trino.labels" . | nindent 4 }}
+data:
+  init-trino.sql: |
+    CREATE SCHEMA IF NOT EXISTS minio.audit WITH (location = 's3://s3-aikom-test/');
+
+    CREATE TABLE IF NOT EXISTS minio.audit.events (
+        id VARCHAR,
+        request_id VARCHAR,
+        application_name VARCHAR,
+        name VARCHAR,
+        type VARCHAR,
+        "timestamp" TIMESTAMP(3),
+        user_keycloak_id VARCHAR,
+        user_name VARCHAR,
+        user_drfo VARCHAR,
+        source_system VARCHAR,
+        source_application VARCHAR,
+        source_business_process VARCHAR,
+        source_business_process_definition_id VARCHAR,
+        source_business_process_instance_id VARCHAR,
+        source_business_activity VARCHAR,
+        source_business_activity_id VARCHAR,
+        context VARCHAR,
+        received TIMESTAMP(3)
+    ) WITH (
+        external_location = 's3://s3-aikom-test/',
+        format = 'PARQUET'
+    );

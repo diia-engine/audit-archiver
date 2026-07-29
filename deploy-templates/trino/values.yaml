@@ -1,0 +1,58 @@
+# ==========================================
+# Загальні налаштування образу Trino
+# ==========================================
+image:
+  repository: trinodb/trino
+  tag: "435"
+  pullPolicy: IfNotPresent
+
+# ==========================================
+# Конфігурація ініціалізації
+# ==========================================
+init:
+  enabled: false
+
+# ==========================================
+# Налаштування ресурсів (Оптимізовано для плагінів)
+# ==========================================
+resources:
+  requests:
+    memory: "1.5Gi"
+    cpu: "500m"
+  limits:
+    memory: "3Gi"
+    cpu: "2"
+
+# ==========================================
+# Політики безпеки для OpenShift (restricted SCC)
+# ==========================================
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+# ==========================================
+# Налаштування підключення до S3 / MinIO
+# ==========================================
+s3:
+  endpoint: "https://s3.krrt-ncr.loc" # Змінено http -> https
+  warehouseDir: "s3a://s3-aikom-test/"
+  secretName: "s3-test"
+  accessKeyKey: "AccessKey"
+  secretKeyKey: "SecretAccessKey"
+  pathStyleAccess: true
+  # Назва вашого чинного ConfigMap, де зберігається сертифікат s3-lb.pem
+  caConfigMapName: "audit-archiver-s3-ca" 
+# ==========================================
+# Конфігурації JVM (Heap узгоджено з limits)
+# ==========================================
+jvm:
+  maxHeapSize: "2048M"
+  gcMethod: "-XX:+UseG1GC"
+
+networkPolicy:
+  enabled: true
