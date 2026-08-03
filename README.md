@@ -169,7 +169,7 @@ The default schedule in `deploy-templates/audit-cronjob/values.yaml` is `45 13 *
 To run a one-off monolithic migration, set `manualJob.enabled: true` and `manualJob.archiveTableName` and then run the following command. The generated Job is named `audit-archiver-cronjob-manual`.
 
 ```bash
-helm template audit-archiver-manual ./deploy-templates/audit-cronjob/ --namespace edu-dev --show-only templates/job-manual.yaml --set manual Job.enabled=true | oc create -f -
+helm template audit-archiver-manual ./deploy-templates/audit-cronjob/ --namespace edu-dev --show-only templates/job-manual.yaml --set manualJob.enabled=true | oc create -f -
 ```
 
 ### Install Trino

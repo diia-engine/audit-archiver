@@ -4,6 +4,7 @@ metadata:
   name: {{ .Values.nameOverride | default (include "audit-archiver.fullname" .) }}
   labels:
     {{- include "audit-archiver.labels" . | nindent 4 }}
+    job-name: "audit-archiver-cronjob"
 spec:
   schedule: {{ .Values.schedule | quote }}
   concurrencyPolicy: {{ .Values.concurrencyPolicy }}

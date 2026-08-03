@@ -12,6 +12,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: audit-archiver-manual
+        job-name: audit-archiver-cronjob-manual
     spec:
       restartPolicy: OnFailure
       
