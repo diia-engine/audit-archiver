@@ -12,31 +12,21 @@ spec:
       app.kubernetes.io/name: {{ .Chart.Name }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   ingress:
-  # 1. Дозвіл Trino звертатися до самого себе (Self-communication / Discovery)
-  - from:
+  - ports:
+    - protocol: TCP
+      port: 8080
+    from:
+    # 1. Дозвіл Trino звертатися до самого себе (Self-communication / Discovery)
     - podSelector:
         matchLabels:
           app.kubernetes.io/name: {{ .Chart.Name }}
           app.kubernetes.io/instance: {{ .Release.Name }}
-    ports:
-    - protocol: TCP
-      port: 8080
-
-  # 2. Дозвіл для redash-admin
-  - from:
+    # 2. Дозвіл для redash-admin
     - podSelector:
         matchLabels:
-          app: redash-admin
-    ports:
-    - protocol: TCP
-      port: 8080
-
-  # 3. Дозвіл для redash-viewer
-  - from:
+          app.kubernetes.io/name: redash-admin
+    # 3. Дозвіл для redash-viewer
     - podSelector:
         matchLabels:
-          app: redash-viewer
-    ports:
-    - protocol: TCP
-      port: 8080
+          app.kubernetes.io/name: redash-viewer
 {{- end }}
