@@ -55,3 +55,12 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Certificates ###
+*.pem
+*.crt
+*.pub
+*.cer
+*.p12
+*.pkcs12
+*.p7b

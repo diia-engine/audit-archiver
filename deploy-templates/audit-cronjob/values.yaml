@@ -5,14 +5,14 @@
 nameOverride: "audit-archiver-cronjob"
 
 image:
-  repository: docker-registry.control-plane-nexus.svc:5004/edu-dev/audit-archiver
+  repository: docker-registry.control-plane-nexus.svc:5004/edu/audit-archiver
   tag: "0.0.4"
   pullPolicy: Always
 
 imagePullSecrets: []
 
 # Запуск джоби (щодня о 03:00)
-schedule: "45 13 * * *"
+schedule: "0 3 * * *"
 timeZone: "Europe/Kyiv"
 concurrencyPolicy: Forbid
 successfulJobsHistoryLimit: 5
@@ -40,8 +40,8 @@ db:
 s3:
   endpoint: "https://s3.krrt-ncr.loc"
   region: "eu-central-1"
-  bucket: "s3-edu-stage-test"
-  existingSecret: "s3-audit-archiv"
+  bucket: "edu-audit-archive"
+  existingSecret: "edu-audit-archive-secret"
   accessKey: "AccessKey"
   secretKey: "SecretAccessKey"
 
