@@ -10,7 +10,7 @@ class ArchiverConfigSpec extends Specification {
         def config = new ArchiverConfig()
 
         when:
-        config.load()
+        config.load([:])
 
         then:
         config.dbHost == "localhost"
@@ -19,10 +19,10 @@ class ArchiverConfigSpec extends Specification {
         config.dbSchema == "public"
         config.dbUser == "postgres"
         config.dbPass == "postgres_password"
-        config.s3Endpoint == "http://localhost:9000"
+        config.s3Endpoint == "http://s3.krrt-ncr.loc:9000"
         config.s3KeyId == "minio_admin"
         config.s3Secret == "minio_password"
-        config.s3Bucket == "diia-audit-archive"
+        config.s3Bucket == "s3-aikom-test"
         config.retentionHours == 24
         config.jdbcUrl == "jdbc:postgresql://localhost:5454/audit"
         config.archiveTableName == ""

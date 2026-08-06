@@ -46,6 +46,8 @@ class ArchiverJob {
             DatabaseService.runMaintenance(conn)
 
             List<PartitionInfo> coldPartitions = DatabaseService.getColdPartitions(conn, config.dbSchema, config.retentionHours)
+            // Maintenance and catalog reads must not keep their locks while Parquet is built and uploaded.
+            conn.commit()
 
             if (coldPartitions.isEmpty()) {
                 logger.info("No cold partitions found for retention threshold ({}h). Exiting.", config.retentionHours)
@@ -62,6 +64,9 @@ class ArchiverJob {
                 )
 
                 if (isExported) {
+                    // The source partition is immutable after the retention window. Commit the export
+                    // transaction before DROP so its AccessShareLock cannot participate in a deadlock.
+                    conn.commit()
                     DatabaseService.dropPartition(conn, config.dbSchema, tableName)
                     conn.commit()
                 } else {

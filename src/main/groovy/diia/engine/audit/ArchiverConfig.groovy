@@ -18,27 +18,27 @@ class ArchiverConfig {
     String jdbcUrl
     String archiveTableName
 
-    def load() {
-        dbHost = System.getenv().getOrDefault("DB_HOST", "localhost")
-        dbPort = System.getenv().getOrDefault("DB_PORT", "5454")
-        dbName = System.getenv().getOrDefault("DB_NAME", "audit")
-        dbSchema = System.getenv().getOrDefault("DB_SCHEMA", "public")
-        dbUser = System.getenv().getOrDefault("DB_USER", "postgres")
-        dbPass = System.getenv().getOrDefault("DB_PASSWORD", "postgres_password")
+    def load(Map<String, String> environment = System.getenv()) {
+        dbHost = environment.getOrDefault("DB_HOST", "localhost")
+        dbPort = environment.getOrDefault("DB_PORT", "5454")
+        dbName = environment.getOrDefault("DB_NAME", "audit")
+        dbSchema = environment.getOrDefault("DB_SCHEMA", "public")
+        dbUser = environment.getOrDefault("DB_USER", "postgres")
+        dbPass = environment.getOrDefault("DB_PASSWORD", "postgres_password")
 
-        s3Endpoint = System.getenv().getOrDefault("S3_ENDPOINT", "http://s3.krrt-ncr.loc:9000")
+        s3Endpoint = environment.getOrDefault("S3_ENDPOINT", "http://s3.krrt-ncr.loc:9000")
         if (!s3Endpoint.startsWith("http://") && !s3Endpoint.startsWith("https://")) {
             s3Endpoint = "http://" + s3Endpoint
         }
-        s3KeyId = System.getenv().getOrDefault("S3_ACCESS_KEY", "minio_admin")
-        s3Secret = System.getenv().getOrDefault("S3_SECRET_KEY", "minio_password")
-        s3Bucket = System.getenv().getOrDefault("S3_BUCKET", "s3-aikom-test")
+        s3KeyId = environment.getOrDefault("S3_ACCESS_KEY", "minio_admin")
+        s3Secret = environment.getOrDefault("S3_SECRET_KEY", "minio_password")
+        s3Bucket = environment.getOrDefault("S3_BUCKET", "s3-aikom-test")
 
-        retentionHours = parseRetentionHours(System.getenv().getOrDefault("RETENTION_HOURS", "24"))
+        retentionHours = parseRetentionHours(environment.getOrDefault("RETENTION_HOURS", "24"))
 
         jdbcUrl = "jdbc:postgresql://${dbHost}:${dbPort}/${dbName}"
 
-        archiveTableName = System.getenv().getOrDefault("ARCHIVE_TABLE_NAME", "").trim()
+        archiveTableName = environment.getOrDefault("ARCHIVE_TABLE_NAME", "").trim()
 
         validate()
     }
